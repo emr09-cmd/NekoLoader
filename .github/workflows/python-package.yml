@@ -1,20 +1,23 @@
-# This workflow checks the NekoLoader Flask application.
+# ============================================================
+# NekoLoader - Continuous Integration
+# ============================================================
 #
-# It will:
-# 1. Check out the repository
-# 2. Install Python
-# 3. Show Python and pip versions
-# 4. Install project dependencies
-# 5. Show installed packages
-# 6. Run Flake8 linting
-# 7. Run pytest
-# 8. Show useful information about the test environment
+# This workflow:
 #
-# The workflow runs whenever:
-# - Code is pushed to main
-# - A pull request targets main
+#   1. Checks out the NekoLoader source code
+#   2. Tests Python 3.9, 3.10 and 3.11
+#   3. Displays detailed environment information
+#   4. Installs Flask and project dependencies
+#   5. Displays installed packages
+#   6. Checks that Flask can be imported
+#   7. Runs Flake8
+#   8. Runs the complete pytest test suite
+#   9. Displays test results
+#  10. Displays a final CI summary
+#
+# ============================================================
 
-name: NekoLoader - Python CI
+name: NekoLoader CI
 
 on:
   push:
@@ -23,129 +26,286 @@ on:
   pull_request:
     branches: ["main"]
 
+# Prevent unnecessary permissions.
+permissions:
+  contents: read
+
 jobs:
+
+  # ==========================================================
+  # BUILD / TEST JOB
+  # ==========================================================
+
   build:
 
-    # GitHub provides a fresh Ubuntu machine for each job.
+    name: Python ${{ matrix.python-version }}
+
     runs-on: ubuntu-latest
 
-    # Test multiple Python versions.
     strategy:
-      # If Python 3.9 fails, continue running 3.10 and 3.11.
+      # If one Python version fails, continue testing
+      # the other Python versions.
       fail-fast: false
 
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version:
+          - "3.9"
+          - "3.10"
+          - "3.11"
 
     steps:
 
-      # ---------------------------------------------------------
-      # 1. Download the repository
-      # ---------------------------------------------------------
-      - name: Checkout repository
+      # ========================================================
+      # CHECKOUT
+      # ========================================================
+
+      - name: Checkout NekoLoader
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------------
-      # 2. Install the requested Python version
-      # ---------------------------------------------------------
+      # ========================================================
+      # PYTHON
+      # ========================================================
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          cache: pip
 
-      # ---------------------------------------------------------
-      # 3. Show information about the environment
-      # ---------------------------------------------------------
-      - name: Show environment information
+      # ========================================================
+      # SYSTEM INFORMATION
+      # ========================================================
+
+      - name: Show system information
         run: |
-          echo "=========================================="
-          echo "NekoLoader CI Environment"
-          echo "=========================================="
-
           echo ""
+          echo "============================================================"
+          echo " NekoLoader CI - SYSTEM INFORMATION"
+          echo "============================================================"
+          echo ""
+
           echo "Operating system:"
           uname -a
 
           echo ""
-          echo "Python version:"
-          python --version
+          echo "Linux distribution:"
+          cat /etc/os-release
 
           echo ""
-          echo "Python location:"
-          which python
+          echo "CPU information:"
+          nproc
 
           echo ""
-          echo "Pip version:"
-          python -m pip --version
-
-          echo ""
-          echo "Working directory:"
+          echo "Current directory:"
           pwd
 
           echo ""
-          echo "Repository files:"
-          ls -la
+          echo "GitHub repository:"
+          echo "${{ github.repository }}"
 
-      # ---------------------------------------------------------
-      # 4. Install dependencies
-      # ---------------------------------------------------------
+          echo ""
+          echo "GitHub branch:"
+          echo "${{ github.ref_name }}"
+
+          echo ""
+          echo "Git commit:"
+          git rev-parse HEAD
+
+          echo ""
+          echo "Short commit:"
+          git rev-parse --short HEAD
+
+          echo ""
+          echo "Commit author:"
+          git log -1 --pretty=format:'%an'
+
+          echo ""
+          echo ""
+          echo "Commit message:"
+          git log -1 --pretty=format:'%s'
+
+          echo ""
+          echo ""
+
+      # ========================================================
+      # PYTHON INFORMATION
+      # ========================================================
+
+      - name: Show Python information
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " PYTHON ENVIRONMENT"
+          echo "============================================================"
+          echo ""
+
+          echo "Python:"
+          python --version
+
+          echo ""
+          echo "Python executable:"
+          which python
+
+          echo ""
+          echo "Python implementation:"
+          python -c "import platform; print(platform.python_implementation())"
+
+          echo ""
+          echo "Python version information:"
+          python -c "import sys; print(sys.version)"
+
+          echo ""
+          echo "Python installation:"
+          python -c "import sys; print(sys.prefix)"
+
+          echo ""
+          echo "Pip:"
+          python -m pip --version
+
+      # ========================================================
+      # REPOSITORY INFORMATION
+      # ========================================================
+
+      - name: Inspect repository
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " REPOSITORY"
+          echo "============================================================"
+          echo ""
+
+          echo "Repository contents:"
+          find . -maxdepth 2 -type f \
+            -not -path './.git/*' \
+            | sort
+
+          echo ""
+          echo "Python files:"
+          find . -name "*.py" \
+            -not -path './.git/*' \
+            | sort
+
+          echo ""
+          echo "Templates:"
+          if [ -d "templates" ]; then
+            find templates -type f | sort
+          else
+            echo "No templates directory found."
+          fi
+
+      # ========================================================
+      # DEPENDENCIES
+      # ========================================================
+
       - name: Install dependencies
         run: |
-          echo "=========================================="
-          echo "Installing dependencies"
-          echo "=========================================="
+          echo ""
+          echo "============================================================"
+          echo " INSTALLING DEPENDENCIES"
+          echo "============================================================"
+          echo ""
 
+          echo "Upgrading pip..."
           python -m pip install --upgrade pip
 
           echo ""
-          echo "Installing testing and linting tools..."
+          echo "Installing test tools..."
           python -m pip install flake8 pytest
 
           echo ""
-          echo "Checking for requirements.txt..."
+          echo "Checking requirements.txt..."
 
           if [ -f requirements.txt ]; then
-            echo "requirements.txt found!"
-            echo "Installing project dependencies..."
+            echo "requirements.txt found."
+            echo ""
+            cat requirements.txt
+            echo ""
+            echo "Installing requirements..."
             python -m pip install -r requirements.txt
           else
-            echo "No requirements.txt found."
+            echo "WARNING: requirements.txt was not found."
           fi
 
-      # ---------------------------------------------------------
-      # 5. Show installed Python packages
-      # ---------------------------------------------------------
+      # ========================================================
+      # INSTALLED PACKAGES
+      # ========================================================
+
       - name: Show installed packages
         run: |
-          echo "=========================================="
-          echo "Installed Python packages"
-          echo "=========================================="
+          echo ""
+          echo "============================================================"
+          echo " INSTALLED PYTHON PACKAGES"
+          echo "============================================================"
+          echo ""
 
           python -m pip list
 
-      # ---------------------------------------------------------
-      # 6. Check that Flask can be imported
-      # ---------------------------------------------------------
-      - name: Check Flask installation
+          echo ""
+          echo "Dependency tree:"
+          python -m pip freeze
+
+      # ========================================================
+      # FLASK CHECK
+      # ========================================================
+
+      - name: Check Flask
         run: |
-          echo "=========================================="
-          echo "Checking Flask"
-          echo "=========================================="
+          echo ""
+          echo "============================================================"
+          echo " FLASK CHECK"
+          echo "============================================================"
+          echo ""
+
+          python -c "import flask; print('Flask imported successfully')"
 
           python -c "import flask; print('Flask version:', flask.__version__)"
 
-      # ---------------------------------------------------------
-      # 7. Check Python source files with Flake8
-      # ---------------------------------------------------------
-      - name: Lint with Flake8
-        run: |
-          echo "=========================================="
-          echo "Running Flake8"
-          echo "=========================================="
+          python -c "from app import app; print('Flask application imported successfully')"
 
+          python -c "from app import app; print('Application name:', app.name)"
+
+          python -c "from app import app; print('Registered routes:'); [print('  ', rule) for rule in app.url_map.iter_rules()]"
+
+      # ========================================================
+      # DATABASE CHECK
+      # ========================================================
+
+      - name: Check application database code
+        run: |
           echo ""
-          echo "Checking for serious Python errors..."
+          echo "============================================================"
+          echo " DATABASE CHECK"
+          echo "============================================================"
+          echo ""
+
+          python - <<'PY'
+          import app
+
+          print("Database configured as:")
+          print(app.DATABASE)
+
+          print()
+          print("Database initialization function:")
+          print(app.init_db)
+
+          print()
+          print("Database code loaded successfully.")
+          PY
+
+      # ========================================================
+      # FLAKE8
+      # ========================================================
+
+      - name: Run Flake8
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " FLAKE8 LINTING"
+          echo "============================================================"
+          echo ""
+
+          echo "Checking Python syntax and serious errors..."
+          echo ""
 
           flake8 . \
             --count \
@@ -154,7 +314,8 @@ jobs:
             --statistics
 
           echo ""
-          echo "Running general code-quality checks..."
+          echo "Running general code-quality analysis..."
+          echo ""
 
           flake8 . \
             --count \
@@ -163,44 +324,75 @@ jobs:
             --max-line-length=127 \
             --statistics
 
-      # ---------------------------------------------------------
-      # 8. Run pytest
-      # ---------------------------------------------------------
-      - name: Run tests with pytest
-        run: |
-          echo "=========================================="
-          echo "Running NekoLoader tests"
-          echo "=========================================="
-
-          pytest \
-            -v \
-            --tb=short
-
-      # ---------------------------------------------------------
-      # 9. Print final information
-      # ---------------------------------------------------------
-      - name: CI summary
-        if: always()
-        run: |
-          echo "=========================================="
-          echo "NekoLoader CI Summary"
-          echo "=========================================="
-
           echo ""
+          echo "Flake8 completed."
+
+      # ========================================================
+      # PYTEST COLLECTION
+      # ========================================================
+
+      - name: Discover tests
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " PYTEST TEST DISCOVERY"
+          echo "============================================================"
+          echo ""
+
+          pytest --collect-only -q
+
+      # ========================================================
+      # PYTEST
+      # ========================================================
+
+      - name: Run pytest
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " RUNNING NEKOLOADER TESTS"
+          echo "============================================================"
+          echo ""
+
           echo "Python version:"
           python --version
 
           echo ""
-          echo "Git commit:"
-          git rev-parse --short HEAD
+          echo "Pytest version:"
+          pytest --version
 
           echo ""
-          echo "Branch:"
-          git branch --show-current
-
+          echo "Starting test suite..."
           echo ""
+
+          pytest -v --tb=short --durations=10
+
+      # ========================================================
+      # FINAL SUMMARY
+      # ========================================================
+
+      - name: CI summary
+        if: always()
+        run: |
+          echo ""
+          echo "============================================================"
+          echo " NEKOLOADER CI SUMMARY"
+          echo "============================================================"
+          echo ""
+
           echo "Repository:"
           echo "${{ github.repository }}"
+
+          echo ""
+          echo "Python:"
+          python --version
+
+          echo ""
+          echo "Operating system:"
+          uname -srm
+
+          echo ""
+          echo "Commit:"
+          git rev-parse --short HEAD
 
           echo ""
           echo "Workflow:"
@@ -211,6 +403,21 @@ jobs:
           echo "${{ github.run_number }}"
 
           echo ""
-          echo "=========================================="
-          echo "CI job finished"
-          echo "=========================================="
+          echo "Job:"
+          echo "${{ github.job }}"
+
+          echo ""
+          echo "Python matrix version:"
+          echo "${{ matrix.python-version }}"
+
+          echo ""
+          echo "============================================================"
+          echo " Test command: pytest -v --tb=short --durations=10"
+          echo "============================================================"
+          echo ""
+
+          echo "If this job is green, the Python ${{ matrix.python-version }}"
+          echo "environment completed the CI checks successfully."
+
+          echo ""
+          echo "============================================================"

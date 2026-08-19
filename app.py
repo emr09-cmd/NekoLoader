@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import io
 import zipfile
@@ -5,7 +6,13 @@ import re
 from flask import Flask, render_template, jsonify, request, g, send_file
 
 app = Flask(__name__)
-DATABASE = 'nekoloader.db'
+
+# Use /tmp on serverless environments like Vercel, or local file otherwise
+if os.environ.get('VERCEL'):
+    DATABASE = '/tmp/nekoloader.db'
+else:
+    DATABASE = 'nekoloader.db'
+
 TEMPLATE_ZIP_PATH = 'example-nekomod.zip'
 
 def get_db():
@@ -22,7 +29,7 @@ def close_connection(exception):
         db.close()
 
 def init_db():
-    with app.app_context():
+    try:
         db = get_db()
         cursor = db.cursor()
         cursor.execute('''
@@ -47,6 +54,12 @@ def init_db():
             )
         ''')
         db.commit()
+    except Exception as e:
+        print(f"Database init warning: {e}")
+
+@app.before_request
+def ensure_db_loaded():
+    init_db()
 
 @app.route('/')
 def index():
@@ -54,17 +67,23 @@ def index():
 
 @app.route('/api/v1/download/universal', methods=['POST'])
 def record_download():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO downloads (installer_type, user_agent, ip_address) VALUES (?, ?, ?)",
-        ('universal', request.headers.get('User-Agent', 'Unknown'), request.remote_addr)
-    )
-    db.commit()
+    download_id = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO downloads (installer_type, user_agent, ip_address) VALUES (?, ?, ?)",
+            ('universal', request.headers.get('User-Agent', 'Unknown'), request.remote_addr)
+        )
+        db.commit()
+        download_id = cursor.lastrowid
+    except Exception as e:
+        print(f"Failed to record download: {e}")
+
     return jsonify({
         "status": "success",
         "installer": "universal",
-        "download_id": cursor.lastrowid,
+        "download_id": download_id,
         "download_url": "/static/builds/nekoloader-universal-installer.jar"
     }), 200
 
@@ -79,14 +98,17 @@ def generate_template():
     game_version = '26.2'
     java_version = 25
 
-    # Log generation request to Database
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute('''
-        INSERT INTO mod_templates (mod_name, bundle_id, author, mod_version, game_version, java_version)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (mod_name, bundle_id, author, mod_version, game_version, java_version))
-    db.commit()
+    # Safe DB Logging
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''
+            INSERT INTO mod_templates (mod_name, bundle_id, author, mod_version, game_version, java_version)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (mod_name, bundle_id, author, mod_version, game_version, java_version))
+        db.commit()
+    except Exception as e:
+        print(f"Database write skipped: {e}")
 
     # Derived Class & Package details
     clean_mod_class = re.sub(r'[^a-zA-Z0-9]', '', mod_name.title()) or "ExampleMod"
@@ -177,6 +199,5 @@ public class {clean_mod_class} {{
     )
 
 if __name__ == '__main__':
-    init_db()
     print("NekoLoader web portal listening on http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)

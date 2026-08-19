@@ -189,7 +189,10 @@ dependencies {{
             # Insert new custom Java entrypoint file matching user inputs
             java_code = f'''package {bundle_id};
 
-public class {clean_mod_class} {{
+import com.emr09.nekoLoader.api.ModInitializer;
+
+public class {clean_mod_class} implements ModInitializer {{
+    @Override
     public void onInitialize() {{
         System.out.println("Initialized {mod_name} v{mod_version} by {author} (MC 26.2 - Java 25)");
     }}

@@ -1,12 +1,10 @@
 import sqlite3
-from datetime import datetime
 from flask import Flask, render_template, jsonify, request, g
 
 app = Flask(__name__)
 DATABASE = 'nekoloader.db'
 
 def get_db():
-    """Connects to the SQLite database."""
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
@@ -15,13 +13,11 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
-    """Closes the database connection at the end of the request."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
 def init_db():
-    """Initializes the database schema."""
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
@@ -40,9 +36,9 @@ def init_db():
 def index():
     return render_template('index.html')
 
-@app.route('/api/v1/download/26.2', methods=['POST'])
-def record_download():
-    """Records download metadata directly into the database."""
+@app.route('/api/v1/download/<version>', methods=['POST'])
+def record_download(version):
+    """Records download metadata for the selected version into the database."""
     db = get_db()
     cursor = db.cursor()
     
@@ -51,7 +47,7 @@ def record_download():
     
     cursor.execute(
         "INSERT INTO downloads (version, user_agent, ip_address) VALUES (?, ?, ?)",
-        ('26.2', user_agent, ip_addr)
+        (version, user_agent, ip_addr)
     )
     db.commit()
     
@@ -59,13 +55,13 @@ def record_download():
     
     return jsonify({
         "status": "success",
-        "message": "NekoLoader 26.2 build fetch initiated.",
+        "version": version,
+        "message": f"NekoLoader {version} build fetch initiated.",
         "download_id": download_id,
-        "download_url": "/static/builds/nekoloader-26.2-installer.jar"
+        "download_url": f"/static/builds/nekoloader-{version}-installer.jar"
     }), 200
 
 if __name__ == '__main__':
     init_db()
     print("NekoLoader web portal listening on http://0.0.0.0:5000")
-    # Bind to 0.0.0.0 to listen on all public/network interfaces
     app.run(host='0.0.0.0', port=5000, debug=True)

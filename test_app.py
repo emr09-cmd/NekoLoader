@@ -57,7 +57,9 @@ def test_generate_template(tmp_path):
     assert response.status_code == 200
     assert response.mimetype == "application/zip"
 
-    zip_file = zipfile.ZipFile(io.BytesIO(response.data))
+    zip_file = zipfile.ZipFile(
+        io.BytesIO(response.data)
+    )
 
     assert "nekoloader.mod.json" in zip_file.namelist()
     assert "build.gradle" in zip_file.namelist()

@@ -36,9 +36,9 @@ def init_db():
 def index():
     return render_template('index.html')
 
-@app.route('/api/v1/download/<version>', methods=['POST'])
-def record_download(version):
-    """Records download metadata for the selected version into the database."""
+@app.route('/api/v1/download/26.2', methods=['POST'])
+def record_download():
+    """Records download metadata specifically for Minecraft 26.2 into the database."""
     db = get_db()
     cursor = db.cursor()
     
@@ -47,7 +47,7 @@ def record_download(version):
     
     cursor.execute(
         "INSERT INTO downloads (version, user_agent, ip_address) VALUES (?, ?, ?)",
-        (version, user_agent, ip_addr)
+        ('26.2', user_agent, ip_addr)
     )
     db.commit()
     
@@ -55,10 +55,10 @@ def record_download(version):
     
     return jsonify({
         "status": "success",
-        "version": version,
-        "message": f"NekoLoader {version} build fetch initiated.",
+        "version": "26.2",
+        "message": "NekoLoader 26.2 build fetch initiated.",
         "download_id": download_id,
-        "download_url": f"/static/builds/nekoloader-{version}-installer.jar"
+        "download_url": "/static/builds/nekoloader-26.2-installer.jar"
     }), 200
 
 if __name__ == '__main__':

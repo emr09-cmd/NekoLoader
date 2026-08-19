@@ -60,40 +60,22 @@
         .version-item {
             padding: 0.8rem 1rem;
             border-radius: 8px;
-            border: 1px solid transparent;
-            background: var(--card-bg);
-            color: var(--text-main);
-            cursor: pointer;
+            border: 1px solid var(--accent);
+            background: var(--accent);
+            color: #000;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .version-item:hover:not(.disabled) {
-            border-color: var(--accent);
-        }
-
-        .version-item.active {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
+            font-weight: 700;
             box-shadow: 0 0 15px var(--accent-glow);
-        }
-
-        .version-item.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            background: transparent;
-            border: 1px dashed var(--border);
+            cursor: default;
         }
 
         .tag {
             font-size: 0.7rem;
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.15);
             text-transform: uppercase;
         }
 
@@ -208,23 +190,11 @@
 
     <!-- Side Drawer -->
     <aside class="sidebar">
-        <div class="sidebar-title">Select MC Version</div>
+        <div class="sidebar-title">Supported Version</div>
         <ul class="version-list">
-            <li class="version-item active" data-version="26.2">
+            <li class="version-item">
                 <span>MC 26.2</span>
-                <span class="tag">Stable</span>
-            </li>
-            <li class="version-item disabled" data-version="26.1">
-                <span>MC 26.1</span>
-                <span class="tag">Planned</span>
-            </li>
-            <li class="version-item disabled" data-version="26.0">
-                <span>MC 26.0</span>
-                <span class="tag">Planned</span>
-            </li>
-            <li class="version-item disabled" data-version="1.20.6">
-                <span>MC 1.20.6</span>
-                <span class="tag">Legacy</span>
+                <span class="tag">Exclusive</span>
             </li>
         </ul>
     </aside>
@@ -232,15 +202,15 @@
     <!-- Main Section -->
     <main class="content">
         <header>
-            <span class="badge" id="activeBadge">Targeting MC 26.2</span>
+            <span class="badge">Targeting MC 26.2</span>
             <h1>Neko<span>Loader</span></h1>
-            <p class="subtitle">Next-generation mod loader engine engineered natively for modern Minecraft builds.</p>
+            <p class="subtitle">Next-generation mod loader engine engineered exclusively for Minecraft 26.2.</p>
         </header>
 
         <div class="container">
             <div class="download-card">
-                <div class="version-tag" id="displayVersion">NekoLoader for MC 26.2</div>
-                <p style="color: var(--text-muted);" id="versionSubtext">Build v1.0.0-release • JDK 21 required</p>
+                <div class="version-tag">NekoLoader for MC 26.2</div>
+                <p style="color: var(--text-muted);">Build v1.0.0-release • JDK 21 required</p>
 
                 <button class="btn-download" id="downloadBtn">Download Installer (.JAR)</button>
                 <div id="log-status"></div>
@@ -249,39 +219,19 @@
     </main>
 
     <script>
-        let currentVersion = '26.2';
-
-        // Handles switching active version in the sidebar
-        document.querySelectorAll('.version-item:not(.disabled)').forEach(item => {
-            item.addEventListener('click', (e) => {
-                document.querySelectorAll('.version-item').forEach(el => el.classList.remove('active'));
-                
-                const target = e.currentTarget;
-                target.classList.add('active');
-                
-                currentVersion = target.getAttribute('data-version');
-                
-                // Update interface state
-                document.getElementById('activeBadge').textContent = `Targeting MC ${currentVersion}`;
-                document.getElementById('displayVersion').textContent = `NekoLoader for MC ${currentVersion}`;
-                document.getElementById('log-status').textContent = '';
-            });
-        });
-
-        // Trigger installer download via DB backend API
         document.getElementById('downloadBtn').addEventListener('click', async () => {
             const statusDiv = document.getElementById('log-status');
-            statusDiv.textContent = `Contacting database & fetching build for MC ${currentVersion}...`;
+            statusDiv.textContent = 'Contacting database & fetching build for MC 26.2...';
 
             try {
-                const response = await fetch(`/api/v1/download/${currentVersion}`, {
+                const response = await fetch('/api/v1/download/26.2', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    statusDiv.textContent = `Logged to DB (ID: ${data.download_id}). Fetching ${data.version} installer...`;
+                    statusDiv.textContent = `Logged to DB (ID: ${data.download_id}). Fetching 26.2 installer...`;
                 } else {
                     statusDiv.textContent = 'Failed to process request on server.';
                 }

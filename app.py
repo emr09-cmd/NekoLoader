@@ -40,6 +40,7 @@ def init_db():
                 author TEXT NOT NULL,
                 mod_version TEXT NOT NULL,
                 game_version TEXT NOT NULL,
+                java_version INTEGER NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -73,14 +74,15 @@ def generate_template():
     bundle_id = data.get('bundle_id', 'com.example.mod')
     author = data.get('author', 'Anonymous')
     mod_version = data.get('mod_version', '1.0.0')
-    game_version = data.get('game_version', '26.2')
+    game_version = '26.2'
+    java_version = 25
 
     db = get_db()
     cursor = db.cursor()
     cursor.execute('''
-        INSERT INTO mod_templates (mod_name, bundle_id, author, mod_version, game_version)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (mod_name, bundle_id, author, mod_version, game_version))
+        INSERT INTO mod_templates (mod_name, bundle_id, author, mod_version, game_version, java_version)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (mod_name, bundle_id, author, mod_version, game_version, java_version))
     db.commit()
 
     memory_file = io.BytesIO()
@@ -93,16 +95,24 @@ def generate_template():
   "authors": ["{author}"],
   "depends": {{
     "minecraft": "26.2",
+    "java": ">=25",
     "nekoloader": ">=1.0.0"
   }}
 }}'''
-        build_gradle = f'''// NekoLoader Template - MC 26.2
+        build_gradle = f'''// NekoLoader Template - MC 26.2 (Java 25)
 plugins {{
     id 'nekoloader-gradle' version '1.0.0'
+    id 'java'
 }}
 
 group = '{bundle_id}'
 version = '{mod_version}'
+
+java {{
+    toolchain {{
+        languageVersion = JavaLanguageVersion.of(25)
+    }}
+}}
 
 nekoloader {{
     gameVersion = '26.2'
@@ -110,14 +120,14 @@ nekoloader {{
 '''
         zf.writestr('nekoloader.mod.json', mod_json)
         zf.writestr('build.gradle', build_gradle)
-        zf.writestr('src/main/java/Main.java', f'// Mod entry point for {mod_name}\npublic class Main {{}}')
+        zf.writestr('src/main/java/Main.java', f'// Mod entry point for {mod_name}\npublic class Main {{\n    public static void main(String[] args) {{\n        System.out.println("Loaded {mod_name} on Java 25!");\n    }}\n}}')
 
     memory_file.seek(0)
     return send_file(
         memory_file,
         mimetype='application/zip',
         as_attachment=True,
-        download_name=f'{mod_name}-template-{game_version}.zip'
+        download_name=f'{mod_name}-template-26.2-java25.zip'
     )
 
 if __name__ == '__main__':

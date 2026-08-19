@@ -305,19 +305,7 @@
         <ul class="version-list">
             <li class="version-item active">
                 <span>MC 26.2</span>
-                <span class="tag">Latest</span>
-            </li>
-            <li class="version-item">
-                <span>MC 26.1</span>
-                <span class="tag">Supported</span>
-            </li>
-            <li class="version-item">
-                <span>MC 26.0</span>
-                <span class="tag">Supported</span>
-            </li>
-            <li class="version-item">
-                <span>MC 1.20.6</span>
-                <span class="tag">Supported</span>
+                <span class="tag">Active</span>
             </li>
         </ul>
     </aside>
@@ -333,7 +321,7 @@
         <div class="container">
             <div class="download-card">
                 <div class="version-tag">NekoLoader Universal Installer (.JAR)</div>
-                <p style="color: var(--text-muted);">One installer for all supported versions • JDK 21 required</p>
+                <p style="color: var(--text-muted);">Configured for MC 26.2 • JDK 25 required</p>
 
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="downloadBtn">Download Installer</button>
@@ -371,7 +359,7 @@
                 <div class="form-group">
                     <label for="gameVersion">Game Version</label>
                     <select id="gameVersion" disabled>
-                        <option value="26.2" selected>Minecraft 26.2</option>
+                        <option value="26.2" selected>Minecraft 26.2 (Java 25)</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download Template (.ZIP)</button>
@@ -433,7 +421,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${payload.mod_name}-template-26.2.zip`;
+                a.download = `${payload.mod_name}-template-26.2-java25.zip`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

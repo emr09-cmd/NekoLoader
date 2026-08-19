@@ -1,5 +1,4 @@
 import io
-import sqlite3
 import zipfile
 
 import app as app_module

@@ -1,5 +1,7 @@
 import sqlite3
-from flask import Flask, render_template, jsonify, request, g
+import io
+import zipfile
+from flask import Flask, render_template, jsonify, request, g, send_file
 
 app = Flask(__name__)
 DATABASE = 'nekoloader.db'
@@ -21,12 +23,25 @@ def init_db():
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
+        # Table for installer downloads
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS downloads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 version TEXT NOT NULL,
                 user_agent TEXT,
                 ip_address TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        # Table for generated mod templates
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS mod_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mod_name TEXT NOT NULL,
+                bundle_id TEXT NOT NULL,
+                author TEXT NOT NULL,
+                mod_version TEXT NOT NULL,
+                game_version TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -38,28 +53,77 @@ def index():
 
 @app.route('/api/v1/download/26.2', methods=['POST'])
 def record_download():
-    """Records download metadata specifically for Minecraft 26.2 into the database."""
     db = get_db()
     cursor = db.cursor()
-    
-    user_agent = request.headers.get('User-Agent', 'Unknown')
-    ip_addr = request.remote_addr
-    
     cursor.execute(
         "INSERT INTO downloads (version, user_agent, ip_address) VALUES (?, ?, ?)",
-        ('26.2', user_agent, ip_addr)
+        ('26.2', request.headers.get('User-Agent', 'Unknown'), request.remote_addr)
     )
     db.commit()
-    
-    download_id = cursor.lastrowid
-    
     return jsonify({
         "status": "success",
         "version": "26.2",
-        "message": "NekoLoader 26.2 build fetch initiated.",
-        "download_id": download_id,
-        "download_url": "/static/builds/nekoloader-26.2-installer.jar"
+        "download_id": cursor.lastrowid
     }), 200
+
+@app.route('/api/v1/template/generate', methods=['POST'])
+def generate_template():
+    """Logs mod configurations to the DB and returns a dynamic template ZIP file."""
+    data = request.get_json() or {}
+    
+    mod_name = data.get('mod_name', 'ExampleMod')
+    bundle_id = data.get('bundle_id', 'com.example.mod')
+    author = data.get('author', 'Anonymous')
+    mod_version = data.get('mod_version', '1.0.0')
+    game_version = data.get('game_version', '26.2')
+
+    # Save configuration to Database
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        INSERT INTO mod_templates (mod_name, bundle_id, author, mod_version, game_version)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (mod_name, bundle_id, author, mod_version, game_version))
+    db.commit()
+
+    # Generate template zip in-memory
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+        mod_json = f'''{{
+  "schemaVersion": 1,
+  "id": "{bundle_id}",
+  "version": "{mod_version}",
+  "name": "{mod_name}",
+  "authors": ["{author}"],
+  "depends": {{
+    "minecraft": "26.2",
+    "nekoloader": ">=1.0.0"
+  }}
+}}'''
+        build_gradle = f'''// NekoLoader Template - MC 26.2
+plugins {{
+    id 'nekoloader-gradle' version '1.0.0'
+}}
+
+group = '{bundle_id}'
+version = '{mod_version}'
+
+nekoloader {{
+    gameVersion = '26.2'
+}}
+'''
+        zf.writestr('nekoloader.mod.json', mod_json)
+        zf.writestr('build.gradle', build_gradle)
+        zf.writestr('src/main/java/Main.java', f'// Mod entry point for {mod_name}\npublic class Main {{}}')
+
+    memory_file.seek(0)
+    
+    return send_file(
+        memory_file,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f'{mod_name}-template-{game_version}.zip'
+    )
 
 if __name__ == '__main__':
     init_db()

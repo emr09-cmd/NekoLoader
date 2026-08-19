@@ -23,17 +23,15 @@ def init_db():
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
-        # Table for installer downloads
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS downloads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                version TEXT NOT NULL,
+                installer_type TEXT NOT NULL,
                 user_agent TEXT,
                 ip_address TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        # Table for generated mod templates
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS mod_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,24 +49,24 @@ def init_db():
 def index():
     return render_template('index.html')
 
-@app.route('/api/v1/download/26.2', methods=['POST'])
+@app.route('/api/v1/download/universal', methods=['POST'])
 def record_download():
     db = get_db()
     cursor = db.cursor()
     cursor.execute(
-        "INSERT INTO downloads (version, user_agent, ip_address) VALUES (?, ?, ?)",
-        ('26.2', request.headers.get('User-Agent', 'Unknown'), request.remote_addr)
+        "INSERT INTO downloads (installer_type, user_agent, ip_address) VALUES (?, ?, ?)",
+        ('universal', request.headers.get('User-Agent', 'Unknown'), request.remote_addr)
     )
     db.commit()
     return jsonify({
         "status": "success",
-        "version": "26.2",
-        "download_id": cursor.lastrowid
+        "installer": "universal",
+        "download_id": cursor.lastrowid,
+        "download_url": "/static/builds/nekoloader-universal-installer.jar"
     }), 200
 
 @app.route('/api/v1/template/generate', methods=['POST'])
 def generate_template():
-    """Logs mod configurations to the DB and returns a dynamic template ZIP file."""
     data = request.get_json() or {}
     
     mod_name = data.get('mod_name', 'ExampleMod')
@@ -77,7 +75,6 @@ def generate_template():
     mod_version = data.get('mod_version', '1.0.0')
     game_version = data.get('game_version', '26.2')
 
-    # Save configuration to Database
     db = get_db()
     cursor = db.cursor()
     cursor.execute('''
@@ -86,7 +83,6 @@ def generate_template():
     ''', (mod_name, bundle_id, author, mod_version, game_version))
     db.commit()
 
-    # Generate template zip in-memory
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         mod_json = f'''{{
@@ -117,7 +113,6 @@ nekoloader {{
         zf.writestr('src/main/java/Main.java', f'// Mod entry point for {mod_name}\npublic class Main {{}}')
 
     memory_file.seek(0)
-    
     return send_file(
         memory_file,
         mimetype='application/zip',

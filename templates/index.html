@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NekoLoader - Universal Minecraft Mod Loader</title>
+    <title>NekoLoader - Minecraft Mod Loader</title>
     <style>
         :root {
             --bg-color: #0f0f13;
@@ -31,7 +31,7 @@
             min-height: 100vh;
         }
 
-        /* --- Sidebar Section --- */
+        /* --- Side Drawer --- */
         aside.sidebar {
             width: 280px;
             background-color: var(--sidebar-bg);
@@ -51,38 +51,39 @@
             font-weight: 700;
         }
 
-        .info-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
+        .version-list {
+            list-style: none;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
-        .info-card .status {
-            color: var(--accent);
-            font-weight: 700;
-            font-size: 0.95rem;
+        .version-item {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text-main);
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
+            font-weight: 600;
         }
 
-        .info-card .status::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent);
+        .version-item.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            box-shadow: 0 0 15px var(--accent-glow);
         }
 
-        .info-card p {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            line-height: 1.4;
+        .tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.15);
+            text-transform: uppercase;
         }
 
         /* --- Main Content --- */
@@ -298,30 +299,44 @@
 </head>
 <body>
 
-    <!-- Side Section -->
+    <!-- Side Drawer -->
     <aside class="sidebar">
         <div class="sidebar-title">Supported Versions</div>
-        <div class="info-card">
-            <div class="status">All Versions Included</div>
-            <p>NekoLoader features a single universal installer containing runtimes and mappings for all game versions, including 26.2.</p>
-        </div>
+        <ul class="version-list">
+            <li class="version-item active">
+                <span>MC 26.2</span>
+                <span class="tag">Latest</span>
+            </li>
+            <li class="version-item">
+                <span>MC 26.1</span>
+                <span class="tag">Supported</span>
+            </li>
+            <li class="version-item">
+                <span>MC 26.0</span>
+                <span class="tag">Supported</span>
+            </li>
+            <li class="version-item">
+                <span>MC 1.20.6</span>
+                <span class="tag">Supported</span>
+            </li>
+        </ul>
     </aside>
 
     <!-- Main Section -->
     <main class="content">
         <header>
-            <span class="badge">Universal Build</span>
+            <span class="badge">Universal Installer</span>
             <h1>Neko<span>Loader</span></h1>
-            <p class="subtitle">Next-generation mod loader engine packed into a single universal executable.</p>
+            <p class="subtitle">Next-generation mod loader engine delivered in a single universal installer executable.</p>
         </header>
 
         <div class="container">
             <div class="download-card">
-                <div class="version-tag">NekoLoader Universal Installer</div>
-                <p style="color: var(--text-muted);">Supports MC 26.2 and all previous builds • JDK 21 required</p>
+                <div class="version-tag">NekoLoader Universal Installer (.JAR)</div>
+                <p style="color: var(--text-muted);">One installer for all supported versions • JDK 21 required</p>
 
                 <div class="action-buttons">
-                    <button class="btn btn-primary" id="downloadBtn">Download Installer (.JAR)</button>
+                    <button class="btn btn-primary" id="downloadBtn">Download Installer</button>
                     <button class="btn btn-secondary" id="developBtn">Develop Mod</button>
                 </div>
                 <div id="log-status"></div>
@@ -388,7 +403,7 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    statusDiv.textContent = `Logged to DB (ID: ${data.download_id}). Transferring universal JAR...`;
+                    statusDiv.textContent = `Logged to DB (ID: ${data.download_id}). Fetching universal installer...`;
                 }
             } catch (err) {
                 statusDiv.textContent = 'Server communication error.';

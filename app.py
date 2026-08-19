@@ -153,7 +153,7 @@ def generate_template():
                     settings_gradle = f"rootProject.name = '{mod_name.lower().replace(' ', '-')}'\n"
                     out_zip.writestr(item, settings_gradle)
 
-                # 3. Update build.gradle (Pure Java setup + local Jar inclusion)
+                # 3. Update build.gradle
                 elif item.filename == 'example-nekomod/build.gradle':
                     build_gradle = f'''plugins {{
     id 'java'
@@ -182,11 +182,11 @@ dependencies {{
 '''
                     out_zip.writestr(item, build_gradle)
 
-                # Copy all other binary/wrapper files as-is
+                # Copy all other binary/wrapper files as-is (including libs/nekoLoader-api.jar and gradlew wrappers)
                 else:
                     out_zip.writestr(item, content)
 
-            # Insert new custom Java entrypoint file matching user inputs
+            # Insert custom Java entrypoint implementing ModInitializer
             java_code = f'''package {bundle_id};
 
 import com.emr09.nekoLoader.api.ModInitializer;

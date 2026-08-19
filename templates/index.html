@@ -321,7 +321,7 @@
         <div class="container">
             <div class="download-card">
                 <div class="version-tag">NekoLoader Universal Installer (.JAR)</div>
-                <p style="color: var(--text-muted);">JDK 25 required</p>
+                <p style="color: var(--text-muted);">Configured for MC 26.2 • JDK 25 required</p>
 
                 <div class="action-buttons">
                     <button class="btn btn-primary" id="downloadBtn">Download Installer</button>
@@ -342,11 +342,11 @@
             <form id="templateForm">
                 <div class="form-group">
                     <label for="modName">Mod Name</label>
-                    <input type="text" id="modName" value="MyNekoMod" required>
+                    <input type="text" id="modName" value="Example Mod" required>
                 </div>
                 <div class="form-group">
                     <label for="bundleId">Mod Bundle ID</label>
-                    <input type="text" id="bundleId" value="com.example.nekomod" required>
+                    <input type="text" id="bundleId" value="com.example.examplemod" required>
                 </div>
                 <div class="form-group">
                     <label for="author">Author</label>
@@ -362,23 +362,20 @@
                         <option value="26.2" selected>Minecraft 26.2 (Java 25)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download Template (.ZIP)</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Download Custom Template (.ZIP)</button>
             </form>
         </div>
     </div>
 
     <script>
-        // Modal Handlers
         const devModal = document.getElementById('devModal');
         document.getElementById('developBtn').addEventListener('click', () => devModal.classList.add('active'));
         document.getElementById('closeModal').addEventListener('click', () => devModal.classList.remove('active'));
 
-        // Close on overlay click
         devModal.addEventListener('click', (e) => {
             if (e.target === devModal) devModal.classList.remove('active');
         });
 
-        // Download Universal Installer
         document.getElementById('downloadBtn').addEventListener('click', async () => {
             const statusDiv = document.getElementById('log-status');
             statusDiv.textContent = 'Contacting database & fetching universal installer...';
@@ -398,7 +395,6 @@
             }
         });
 
-        // Handle Template Mod Generation
         document.getElementById('templateForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -421,7 +417,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${payload.mod_name}-template-26.2-java25.zip`;
+                a.download = `${payload.mod_name.toLowerCase().replace(/\s+/g, '-')}-template-26.2.zip`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

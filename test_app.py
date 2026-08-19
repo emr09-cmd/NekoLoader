@@ -27,15 +27,18 @@ def test_record_download(tmp_path):
 
     client = app_module.app.test_client()
 
-    response = client.post("/api/v1/download/26.2")
+    response = client.post("/api/v1/download/universal")
 
     assert response.status_code == 200
 
     data = response.get_json()
 
     assert data["status"] == "success"
-    assert data["version"] == "26.2"
+    assert data["installer"] == "universal"
     assert data["download_id"] == 1
+    assert data["download_url"] == (
+        "/static/builds/nekoloader-universal-installer.jar"
+    )
 
 
 def test_generate_template(tmp_path):

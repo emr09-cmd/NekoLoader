@@ -148,12 +148,35 @@ def generate_template():
 }}'''
                     out_zip.writestr(item, mod_json)
 
-                # 2. Update build.gradle
+                # 2. Update settings.gradle (Add plugin management repositories)
+                elif item.filename == 'example-nekomod/settings.gradle':
+                    settings_gradle = f'''pluginManagement {{
+    repositories {{
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+        flatDir {{
+            dirs 'libs'
+        }}
+    }}
+}}
+
+rootProject.name = '{mod_name.lower().replace(' ', '-')}'
+'''
+                    out_zip.writestr(item, settings_gradle)
+
+                # 3. Update build.gradle (Define local jar fallback & repositories)
                 elif item.filename == 'example-nekomod/build.gradle':
                     build_gradle = f'''// NekoLoader Template - MC 26.2 (Java 25)
 plugins {{
-    id 'nekoloader-gradle' version '1.0.0'
     id 'java'
+    id 'nekoloader-gradle' version '1.0.0' apply false
+}}
+
+try {{
+    apply plugin: 'nekoloader-gradle'
+}} catch (Exception e) {{
+    logger.warn("nekoloader-gradle plugin not found on remote repositories. Falling back to local binaries.")
 }}
 
 group = '{bundle_id}'
@@ -165,15 +188,25 @@ java {{
     }}
 }}
 
-nekoloader {{
-    gameVersion = '26.2'
+repositories {{
+    mavenLocal()
+    mavenCentral()
+    flatDir {{
+        dirs 'libs'
+    }}
 }}
+
+dependencies {{
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}}
+
+try {{
+    nekoloader {{
+        gameVersion = '26.2'
+    }}
+}} catch (MissingPropertyException | Exception ignored) {{}}
 '''
                     out_zip.writestr(item, build_gradle)
-
-                # 3. Update settings.gradle
-                elif item.filename == 'example-nekomod/settings.gradle':
-                    out_zip.writestr(item, f"rootProject.name = '{mod_name.lower().replace(' ', '-')}'")
 
                 # Copy all other binary/wrapper files as-is
                 else:

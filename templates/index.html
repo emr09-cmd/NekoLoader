@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NekoLoader - Next-Gen Mod Loader for Minecraft 26.2</title>
+    <style>
+        :root {
+            --bg-color: #0f0f13;
+            --card-bg: #181820;
+            --accent: #ff79c6;
+            --accent-glow: rgba(255, 121, 198, 0.35);
+            --text-main: #f8f8f2;
+            --text-muted: #6272a4;
+            --border: #282a36;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            margin-top: 2rem;
+        }
+
+        .badge {
+            background-color: var(--border);
+            color: var(--accent);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--accent);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 span {
+            color: var(--accent);
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .download-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .version-tag {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-download {
+            background-color: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 20px var(--accent-glow);
+            margin-top: 1.5rem;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        #log-status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            min-height: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <span class="badge">Targeting MC 26.2</span>
+        <h1>Neko<span>Loader</span></h1>
+        <p class="subtitle">A high-performance, minimalist mod loader architecture engineered specifically for Minecraft 26.2.</p>
+    </header>
+
+    <div class="container">
+        <div class="download-card">
+            <div class="version-tag">NekoLoader v1.0.0</div>
+            <p style="color: var(--text-muted);">Compatible strictly with Minecraft Java Edition 26.2</p>
+
+            <button class="btn-download" id="downloadBtn">Download Installer (.JAR)</button>
+            <div id="log-status"></div>
+        </div>
+
+        <div class="grid">
+            <div class="feature-card">
+                <h3>High Speed Engine</h3>
+                <p>Loads game transforms in parallel, drastically reducing game startup times compared to legacy systems.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Strict Version Pinning</h3>
+                <p>Engineered natively around the 26.2 bytecode changes to eliminate launch crashes and mapping issues.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Database Tracked</h3>
+                <p>Installer downloads are verified and logged directly to the server database for build telemetry.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('log-status');
+            statusDiv.textContent = 'Contacting server & logging download...';
+
+            try {
+                const response = await fetch('/api/v1/download/26.2', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.textContent = `Download logged to DB (ID: ${data.download_id}). Starting file transfer...`;
+                } else {
+                    statusDiv.textContent = 'Server accepted download, but error occurred.';
+                }
+            } catch (err) {
+                statusDiv.textContent = 'Failed to record download to database.';
+            }
+        });
+    </script>
+</body>
+</html>
